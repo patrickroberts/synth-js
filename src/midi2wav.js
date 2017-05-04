@@ -1,8 +1,8 @@
 'use strict';
 
-const WAV = require('../src/wav');
-const MIDIStream = require('../src/midi');
-const Timer = require('./timer');
+const WAV = require('./wav');
+const MIDIStream = require('./midi');
+const Timer = require('./utils/timer');
 
 module.exports = function midiToWav(buffer, args = {Skip: []}) {
   if (args.verbose) {

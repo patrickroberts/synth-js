@@ -1,0 +1,10 @@
+{
+  "paths": {
+    "entry": "./index.js",
+    "dest": "./dst"
+  },
+  "names": {
+    "app": "synth.min.js",
+    "glob": "synth"
+  }
+}

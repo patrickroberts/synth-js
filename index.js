@@ -3,5 +3,5 @@
 module.exports = {
   WAV: require('./src/wav'),
   MIDIStream: require('./src/midi'),
-  midiToWav: require('./lib/midi2wav')
+  midiToWav: require('./src/midi2wav')
 };

@@ -2,8 +2,8 @@
 'use strict';
 
 const fs = require('fs');
-const midiToWav = require('../lib/midi2wav');
-const getArgs = require('../lib/args');
+const midiToWav = require('../src/midi2wav');
+const getArgs = require('./utils/args');
 
 try {
   const args = getArgs(process.argv);
