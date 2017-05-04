@@ -41,6 +41,7 @@ const synth = require('synth-js');
 const fs = require('fs');
 
 let midBuffer = fs.readFileSync('song.mid');
+// convert midi buffer to wav buffer
 let wavBuffer = synth.midiToWav(midiBuffer).toBuffer();
 
 fs.writeFileSync('song.wav', wavBuffer, {encoding: 'binary'});
@@ -62,9 +63,11 @@ fs.writeFileSync('song.wav', wavBuffer, {encoding: 'binary'});
 <a id="wav">Download</a>
 <script>
   var audio;
+  var input = document.getElementById('midi');
   var anchor = document.getElementById('wav');
 
-  document.getElementById('midi').addEventListener('change', function change() {
+  input.addEventListener('change', function change() {
+    // clean up previous song, if any
     if (anchor.hasAttribute('href')) {
       URL.revokeObjectURL(anchor.href);
       anchor.removeAttribute('href');
@@ -74,11 +77,18 @@ fs.writeFileSync('song.wav', wavBuffer, {encoding: 'binary'});
       }
     }
 
-    if (this.files.length > 0) {
+    // check if file exists
+    if (input.files.length > 0) {
       var reader = new FileReader();
+      var midName = input.files[0].name;
+      // replace file extension with .wav
+      var wavName = midName.replace(/\..+?$/, '.wav');
 
+      // set callback for array buffer
       reader.addEventListener('load', function load(event) {
+        // convert midi arraybuffer to wav blob
         var wav = synth.midiToWav(event.target.result).toBlob();
+        // create a temporary URL to the wav file
         var src = URL.createObjectURL(wav);
 
         audio = new Audio(src);
@@ -87,15 +97,34 @@ fs.writeFileSync('song.wav', wavBuffer, {encoding: 'binary'});
         anchor.setAttribute('href', src);
       });
 
-      reader.readAsArrayBuffer(this.files[0]);
+      // read the file as an array buffer
+      reader.readAsArrayBuffer(input.files[0]);
 
-      anchor.setAttribute('download', this.files[0].name.replace(/\..+?$/, '.wav'));
+      // set the name of the wav file
+      anchor.setAttribute('download', wavName);
     }
   });
 </script>
 ```
 
 See the demo [here][browser-demo].
+
+## FAQ
+
+### Where can I find documentation?
+
+Currently, documentation only exists for the command-line utility.
+To access it, use `man`:
+
+```bash
+$ man synth
+```
+
+For Node or JavaScript, refer to the `src/` directory for accessible APIs:
+
+* `synth.WAV()`
+* `synth.MIDIStream()`
+* `synth.midiToWav()`
 
 ## License
 

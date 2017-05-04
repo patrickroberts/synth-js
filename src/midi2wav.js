@@ -4,7 +4,7 @@ const WAV = require('./wav');
 const MIDIStream = require('./midi');
 const Timer = require('./utils/timer');
 
-module.exports = function midiToWav(buffer, args = {Skip: []}) {
+module.exports = function midiToWav(buffer, args = {}) {
   if (args.verbose) {
     console.log('parsing MIDI header...');
   }
