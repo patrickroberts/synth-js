@@ -7,7 +7,10 @@
     "synth": "./bin/synth.js"
   },
   "man": "./man/synth.1",
-  "directories": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/patrickroberts/synth-js.git"
+  },
   "keywords": [
     "wav",
     "midi",
