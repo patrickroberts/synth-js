@@ -1,0 +1,11 @@
+*.DS_Store
+._*
+
+examples
+
+node_modules
+coverage
+npm-debug.log*
+
+.npm
+.env

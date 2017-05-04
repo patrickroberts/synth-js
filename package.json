@@ -1,0 +1,21 @@
+{
+  "name": "synth-js",
+  "version": "0.0.0",
+  "description": "high performance MIDI parser and WAV encoder",
+  "main": "index.js",
+  "bin": {
+    "synth": "./bin/synth.js"
+  },
+  "man": "./man/synth.1",
+  "directories": {},
+  "keywords": [
+    "wav",
+    "midi",
+    "riff",
+    "audio",
+    "music"
+  ],
+  "author": "Patrick Roberts",
+  "license": "MIT",
+  "dependencies": {}
+}

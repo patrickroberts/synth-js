@@ -1,0 +1,66 @@
+.TH SYNTH 1
+.SH NAME
+\fIsynth\fR \- JavaScript MIDI\-to\-WAV synthesizer
+.SH SYNOPSIS
+.B synth
+\-i
+.BR filename
+[options]
+.SH DESCRIPTION
+.B \fIsynth\fR
+parses MIDI file and synthesizes sinusoidal raw audio in WAV format.
+.SH OPTIONS
+.TP
+.BR \-i ", " \-\-input " " \fIfilename\fR
+[Required] Specify path of MIDI file (without extension) as input
+.TP
+.BR \-o ", " \-\-output " " \fIfilename\fR
+Specify path of WAV file (without extension) as output
+.PP
+.RS
+Default to \fIinput\fR
+.RE
+.TP
+.BR \-s ", " \-\-sample\-rate " " \fInumber\fR
+Specify explicitly the sample rate in Hz of WAV output.
+.PP
+.RS
+Default 44100
+.RE
+.TP
+.BR \-b ", " \-\-bits\-per\-sample " " \fInumber\fR
+Specify explicitly the bits per sample of WAV output.
+.PP
+.RS
+Default 16
+.RE
+.TP
+.BR \-d ", " \-\-duration " " \fInumber\fR
+Specify explicitly the relative note duration before rest.
+.PP
+.RS
+Default 1
+.RE
+.TP
+.BR \-S ", " \-\-skip " " \fIjson\fR|\fIfile\fR
+Specify either JSON literal or path of JSON file containing meta events or
+source file with which to match and omit MIDI tracks from WAV output. If
+source file is specified, imports function that accepts a track and
+returns a boolean specifying whether to skip or not.
+.PP
+.RS
+Default []
+.RE
+.TP
+.BR \-v ", " \-\-verbose
+Verbose output
+.TP
+.BR \-D ", " \-\-dry\-run
+Run verbosely without generating WAV file
+.TP
+.BR \-h ", " \-\-help
+Display the help page
+.SH AUTHOR
+Patrick Roberts
+.SH COPYRIGHT
+.B \fIsynth\fR is available under the MIT License.
