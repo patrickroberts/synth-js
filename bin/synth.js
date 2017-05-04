@@ -9,7 +9,7 @@ try {
   const args = getArgs(process.argv);
 
   if (args.help || args.input === undefined) {
-    return console.log(fs.readFileSync(`${__dirname}/../README.txt`, {encoding: 'utf8'}));
+    return console.log(fs.readFileSync(`${__dirname}/../man/help.txt`, {encoding: 'utf8'}));
   }
 
   if (args.verbose) {
