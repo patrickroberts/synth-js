@@ -1,19 +1,19 @@
-"use strict";
+'use strict';
 
-const WAV = require("./wav");
-const MIDIStream = require("./midi");
-const Timer = require("./utils/timer");
+const WAV = require('./wav');
+const MIDIStream = require('./midi');
+const Timer = require('./utils/timer');
 
 module.exports = function midiToWav(buffer, args = {}) {
   if (args.verbose) {
-    console.log("parsing MIDI header...");
+    console.log('parsing MIDI header...');
   }
 
   const midiStream = new MIDIStream(buffer);
   const header = midiStream.readChunk();
 
-  if (header.id !== "MThd" || header.length !== 6) {
-    throw new SyntaxError("malformed header");
+  if (header.id !== 'MThd' || header.length !== 6) {
+    throw new SyntaxError('malformed header');
   }
 
   const headerStream = new MIDIStream(header.data);
@@ -32,7 +32,7 @@ module.exports = function midiToWav(buffer, args = {}) {
 
     const trackChunk = midiStream.readChunk();
 
-    if (trackChunk.id !== "MTrk") {
+    if (trackChunk.id !== 'MTrk') {
       continue;
     }
 
@@ -45,7 +45,7 @@ module.exports = function midiToWav(buffer, args = {}) {
       let event = trackStream.readEvent();
       track.push(event);
 
-      if (typeof event.value === "string") {
+      if (typeof event.value === 'string') {
         if (args.verbose) {
           console.log(`{"${event.subType}":"${event.value}"}`);
         }
@@ -54,9 +54,7 @@ module.exports = function midiToWav(buffer, args = {}) {
           for (let t = 0; t < args.Skip.length; t++) {
             if (args.Skip[t][event.subType] === event.value) {
               if (args.verbose) {
-                console.log(
-                  `skip match found: {"${event.subType}":"${event.value}"}`
-                );
+                console.log(`skip match found: {"${event.subType}":"${event.value}"}`);
               }
 
               keep = false;
@@ -67,7 +65,7 @@ module.exports = function midiToWav(buffer, args = {}) {
       }
     }
 
-    if (typeof args.Skip === "function") {
+    if (typeof args.Skip === 'function') {
       keep = !args.Skip(track);
     }
 
@@ -83,7 +81,7 @@ module.exports = function midiToWav(buffer, args = {}) {
     const timer = new Timer(timeDivision);
 
     if (args.verbose) {
-      console.log("initializing timer...");
+      console.log('initializing timer...');
     }
 
     // set up timer with setTempo events
@@ -92,7 +90,7 @@ module.exports = function midiToWav(buffer, args = {}) {
       delta += event.delta;
       ticks += event.delta;
 
-      if (event.subType === "setTempo") {
+      if (event.subType === 'setTempo') {
         timer.addCriticalPoint(delta, event.value);
         delta = 0;
       }
@@ -112,29 +110,29 @@ module.exports = function midiToWav(buffer, args = {}) {
         let event = track[j];
         delta += event.delta;
 
-        if (event.type === "channel") {
+        if (event.type === 'channel') {
           const semitone = event.value.noteNumber;
 
-          if (event.subType === "noteOn") {
+          if (event.subType === 'noteOn') {
             let velocity = event.value.velocity;
             let offset = timer.getTime(delta);
 
             // use stack for simultaneous identical notes
             if (map.has(semitone)) {
-              map.get(semitone).push({ offset, velocity });
+              map.get(semitone).push({offset, velocity});
             } else {
-              map.set(semitone, [{ offset, velocity }]);
+              map.set(semitone, [{offset, velocity}]);
             }
 
             // to determine maximum total velocity for normalizing volume
-            events.push({ velocity, delta, note: true });
-          } else if (event.subType === "noteOff") {
+            events.push({velocity, delta, note: true});
+          } else if (event.subType === 'noteOff') {
             // create note
             let note;
 
-            // if no semitone, set empty note
-            if (!map.get(semitone)) note = [{ offset: 0, velocity: 0 }];
+            if (!map.get(semitone)) note = [{offset:0, velocity: 0}] // if no semitone, set empty note
             else note = map.get(semitone).pop(); // set note to semitone minus last
+            
 
             progression.push({
               note: WAV.note(semitone),
@@ -144,22 +142,18 @@ module.exports = function midiToWav(buffer, args = {}) {
             });
 
             // to determine maximum total velocity for normalizing volume
-            events.push({ velocity: note.velocity, delta, note: false });
+            events.push({velocity: note.velocity, delta, note: false});
           }
-        } else if (args.verbose && event.type === "meta") {
-          if (typeof event.value === "string") {
-            console.log(
-              `${timer.getTime(delta).toFixed(2)}s ${event.subType}: ${
-                event.value
-              }`
-            );
+        } else if (args.verbose && event.type === 'meta') {
+          if (typeof event.value === 'string') {
+            console.log(`${timer.getTime(delta).toFixed(2)}s ${event.subType}: ${event.value}`);
           }
         }
       }
     }
 
     if (args.verbose) {
-      console.log("normalizing volume...");
+      console.log('normalizing volume...');
     }
 
     events.sort(function (a, b) {
@@ -167,12 +161,8 @@ module.exports = function midiToWav(buffer, args = {}) {
     });
 
     if (args.verbose) {
-      console.log("total notes:", progression.length);
-      console.log(
-        "total time:",
-        timer.getTime(events[events.length - 1].delta),
-        "seconds"
-      );
+      console.log('total notes:', progression.length);
+      console.log('total time:', timer.getTime(events[events.length - 1].delta), 'seconds');
     }
 
     let maxVelocity = 1;
@@ -206,27 +196,15 @@ module.exports = function midiToWav(buffer, args = {}) {
     maxAmplitude = 128 / maxVelocity;
 
     if (args.verbose) {
-      console.log("setting volume to", maxAmplitude);
-      console.log(
-        "  maximum chord of",
-        maxChord,
-        "at",
-        maxChordTime,
-        "seconds"
-      );
-      console.log(
-        "  maximum velocity of",
-        maxVelocity - 1,
-        "at",
-        maxVelocityTime,
-        "seconds"
-      );
+      console.log('setting volume to', maxAmplitude);
+      console.log('  maximum chord of', maxChord, 'at', maxChordTime, 'seconds');
+      console.log('  maximum velocity of', maxVelocity - 1, 'at', maxVelocityTime, 'seconds');
     }
   } else {
     // use frames per second
     // not yet implemented
 
-    console.log("Detected unsupported MIDI timing mode");
+    console.log('Detected unsupported MIDI timing mode');
 
     return null;
 
@@ -247,19 +225,12 @@ module.exports = function midiToWav(buffer, args = {}) {
   args.channels = 1;
 
   if (args.verbose) {
-    console.log("generating WAV buffer...");
+    console.log('generating WAV buffer...');
   }
 
   const wav = new WAV(args.channels, args.sampleRate, args.bitsPerSample);
 
-  wav.writeProgression(
-    progression,
-    maxAmplitude,
-    [0],
-    true,
-    true,
-    args.duration
-  );
+  wav.writeProgression(progression, maxAmplitude, [0], true, true, args.duration);
 
   return wav;
 };
