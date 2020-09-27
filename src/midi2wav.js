@@ -127,12 +127,9 @@ module.exports = function midiToWav(buffer, args = {}) {
             // to determine maximum total velocity for normalizing volume
             events.push({velocity, delta, note: true});
           } else if (event.subType === 'noteOff') {
-            // create note
-            let note;
 
-            if (!map.get(semitone)) note = [{offset:0, velocity: 0}] // if no semitone, set empty note
-            else note = map.get(semitone).pop(); // set note to semitone minus last
-            
+            const notes = map.get(semitone);
+	    const note = notes ? notes.pop() : { offset: 0, velocity: 0 };
 
             progression.push({
               note: WAV.note(semitone),

@@ -1,6 +1,6 @@
 {
   "name": "synth-js",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "high performance MIDI parser and WAV encoder",
   "main": "index.js",
   "bin": {
