@@ -1,14 +1,24 @@
 'use strict';
 
-// utility class to calculate time from delta ticks
-// when MIDI file has several `setTempo` events
+/**
+ * utility class to calculate time from delta ticks
+ * when MIDI file has several `setTempo` events
+ */
 class Timer {
+  /**
+   * @param {number} ticksPerBeat
+   */
   constructor(ticksPerBeat) {
     this.ticksPerBeat = ticksPerBeat;
+    /** @type {Array<{ delta: number; microsecondsPerBeat: number; }>} */
     this.criticalPoints = [];
   }
 
-  // delta represents ticks since last time change
+  /**
+   * delta represents ticks since last time change
+   * @param {number} delta
+   * @param {number} microsecondsPerBeat
+   */
   addCriticalPoint(delta, microsecondsPerBeat) {
     this.criticalPoints.push({
       delta,
@@ -16,6 +26,9 @@ class Timer {
     });
   }
 
+  /**
+   * @param {number} delta
+   */
   getTime(delta) {
     const microsecondsPerSecond = 1000000;
     let time = 0;

@@ -1,11 +1,17 @@
 'use strict';
 
+// matches occurence of A through G
+// followed by positive or negative integer
+// followed by 0 to 2 occurences of flat or sharp
+const re = /^([A-G])(\-?\d+)(b{0,2}|#{0,2})$/;
+
 class WAV {
+  /**
+   *
+   * @param {string} note
+   * @returns {number}
+   */
   static semitone(note = 'REST') {
-    // matches occurence of A through G
-    // followed by positive or negative integer
-    // followed by 0 to 2 occurences of flat or sharp
-    const re = /^([A-G])(\-?\d+)(b{0,2}|#{0,2})$/;
 
     // if semitone is unrecognized, assume REST
     if (!re.test(note)) {
@@ -13,7 +19,7 @@ class WAV {
     }
 
     // parse substrings of note
-    const [, tone, octave, accidental] = note.match(re);
+    const [, tone, octave, accidental] = note.match(re) || [];
 
     // semitone indexed relative to A4 == 69 for compatibility with MIDI
     const tones = {C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11};
@@ -48,19 +54,32 @@ class WAV {
     return tone.charAt(0) + octave.toString() + tone.charAt(1);
   }
 
-  // converts semitone index to frequency in Hz
+  /**
+   * converts semitone index to frequency in Hz
+   * @param {number} semitone
+   */
   static frequency(semitone = -Infinity) {
     // A4 is 440 Hz, 12 semitones per octave
     return 440 * Math.pow(2, (semitone - 69) / 12);
   }
 
+  /**
+   * @param {number} numChannels
+   * @param {number} sampleRate
+   * @param {number} bitsPerSample
+   * @param {boolean} littleEndian
+   * @param {Array<number>} data
+   */
   constructor(numChannels = 1, sampleRate = 44100, bitsPerSample = 16, littleEndian = true, data = []) {
-    var bytesPerSample = bitsPerSample >>> 3;
+    const bytesPerSample = bitsPerSample >>> 3;
     // WAV header is always 44 bytes
+    /** @type {ArrayBuffer} */
     this.header = new ArrayBuffer(44);
     // flexible container for reading / writing raw bytes in header
+    /** @type {DataView} */
     this.view = new DataView(this.header);
     // leave sound data as non typed array for more flexibility
+    /** @type {Array<number>} */
     this.data = data;
 
     // initialize as non-configurable because it
@@ -90,18 +109,31 @@ class WAV {
     this.BitsPerSample = bitsPerSample;
     this.SubChunk2ID = 'data';
     this.SubChunk2Size = data.length * bytesPerSample;
+    /** @type {boolean} */
+    // @ts-expect-error
+    this.littleEndian;
   }
 
-  // internal setter for writing strings as raw bytes to header
+  /**
+   * internal setter for writing strings as raw bytes to header
+   * @param {string} str
+   * @param {number} byteLength
+   * @param {number} byteOffset
+   */
   setString(str, byteLength = str.length, byteOffset = 0) {
-    for (var i = 0; i < byteLength; i++) {
+    for (let i = 0; i < byteLength; i++) {
       this.view.setUint8(byteOffset + i, str.charCodeAt(i));
     }
   }
 
-  // internal getter for reading raw bytes as strings from header
+  /**
+   * internal getter for reading raw bytes as strings from header
+   * @param {number} byteLength
+   * @param {number} byteOffset
+   */
   getString(byteLength, byteOffset = 0) {
-    for (var i = 0, str = ''; i < byteLength; i++) {
+    let str = '';
+    for (let i = 0; i < byteLength; i++) {
       str += String.fromCharCode(this.view.getUint8(byteOffset + i));
     }
 
@@ -110,7 +142,9 @@ class WAV {
 
   // header property mutators
 
-  // 4 bytes at offset of 0 bytes
+  /**
+   * 4 bytes at offset of 0 bytes
+   */
   set ChunkID(str) {
     this.setString(str, 4, 0);
   }
@@ -119,7 +153,9 @@ class WAV {
     return this.getString(4, 0);
   }
 
-  // 4 bytes at offset of 4 bytes
+  /**
+   * 4 bytes at offset of 4 bytes
+   */
   set ChunkSize(uint) {
     this.view.setUint32(4, uint, this.littleEndian);
   }
@@ -128,7 +164,9 @@ class WAV {
     return this.view.getUint32(4, this.littleEndian);
   }
 
-  // 4 bytes at offset of 8 bytes
+  /**
+   * 4 bytes at offset of 8 bytes
+   */
   set Format(str) {
     this.setString(str, 4, 8);
   }
@@ -137,7 +175,9 @@ class WAV {
     return this.getString(4, 8);
   }
 
-  // 4 bytes at offset of 12 bytes
+  /**
+   * 4 bytes at offset of 12 bytes
+   */
   set SubChunk1ID(str) {
     this.setString(str, 4, 12);
   }
@@ -146,7 +186,9 @@ class WAV {
     return this.getString(4, 12);
   }
 
-  // 4 bytes at offset of 16 bytes
+  /**
+   * 4 bytes at offset of 16 bytes
+   */
   set SubChunk1Size(uint) {
     this.view.setUint32(16, uint, this.littleEndian);
   }
@@ -155,7 +197,9 @@ class WAV {
     return this.view.getUint32(16, this.littleEndian);
   }
 
-  // 2 bytes at offset of 20 bytes
+  /**
+   * 2 bytes at offset of 20 bytes
+   */
   set AudioFormat(uint) {
     this.view.setUint16(20, uint, this.littleEndian);
   }
@@ -164,7 +208,9 @@ class WAV {
     return this.view.getUint16(20, this.littleEndian);
   }
 
-  // 2 bytes at offset of 22 bytes
+  /**
+   * 2 bytes at offset of 22 bytes
+   */
   set NumChannels(uint) {
     this.view.setUint16(22, uint, this.littleEndian);
   }
@@ -173,7 +219,9 @@ class WAV {
     return this.view.getUint16(22, this.littleEndian);
   }
 
-  // 4 bytes at offset of 24 bytes
+  /**
+   * 4 bytes at offset of 24 bytes
+   */
   set SampleRate(uint) {
     this.view.setUint32(24, uint, this.littleEndian);
   }
@@ -182,7 +230,9 @@ class WAV {
     return this.view.getUint32(24, this.littleEndian);
   }
 
-  // 4 bytes at offset of 28 bytes
+  /**
+   * 4 bytes at offset of 28 bytes
+   */
   set ByteRate(uint) {
     this.view.setUint32(28, uint, this.littleEndian);
   }
@@ -191,7 +241,9 @@ class WAV {
     return this.view.getUint32(28, this.littleEndian);
   }
 
-  // 2 bytes at offset of 32 bytes
+  /**
+   * 2 bytes at offset of 32 bytes
+   */
   set BlockAlign(uint) {
     this.view.setUint16(32, uint, this.littleEndian);
   }
@@ -200,7 +252,9 @@ class WAV {
     return this.view.getUint16(32, this.littleEndian);
   }
 
-  // 2 bytes at offset of 34 bytes
+  /**
+   * 2 bytes at offset of 34 bytes
+   */
   set BitsPerSample(uint) {
     this.view.setUint16(34, uint, this.littleEndian);
   }
@@ -209,7 +263,9 @@ class WAV {
     return this.view.getUint16(34, this.littleEndian);
   }
 
-  // 4 bytes at offset of 36 bytes
+  /**
+   * 4 bytes at offset of 36 bytes
+   */
   set SubChunk2ID(str) {
     this.setString(str, 4, 36);
   }
@@ -218,7 +274,9 @@ class WAV {
     return this.getString(4, 36);
   }
 
-  // 4 bytes at offset of 40 bytes
+  /**
+   * 4 bytes at offset of 40 bytes
+   */
   set SubChunk2Size(uint) {
     this.view.setUint32(40, uint, this.littleEndian);
   }
@@ -227,20 +285,22 @@ class WAV {
     return this.view.getUint32(40, this.littleEndian);
   }
 
-  // internal getter for sound data as
-  // typed array based on header properties
+  /**
+   * internal getter for sound data as
+   * typed array based on header properties
+   */
   get typedData() {
-    var bytesPerSample = this.BitsPerSample >>> 3;
-    var data = this.data;
-    var size = this.SubChunk2Size;
-    var samples = size / bytesPerSample;
-    var buffer = new ArrayBuffer(size);
-    var uint8 = new Uint8Array(buffer);
+    const bytesPerSample = this.BitsPerSample >>> 3;
+    const data = this.data;
+    const size = this.SubChunk2Size;
+    const samples = size / bytesPerSample;
+    const buffer = new ArrayBuffer(size);
+    const uint8 = new Uint8Array(buffer);
 
     // convert signed normalized sound data to typed integer data
     // i.e. [-1, 1] -> [INT_MIN, INT_MAX]
-    var amplitude = Math.pow(2, (bytesPerSample << 3) - 1) - 1;
-    var i, d;
+    const amplitude = Math.pow(2, (bytesPerSample << 3) - 1) - 1;
+    let i, d;
 
     switch (bytesPerSample) {
     case 1:
@@ -300,6 +360,7 @@ class WAV {
           uint8[i * 3 + 2] = (d       ) & 0xFF;
         }
       }
+      break;
     case 4:
       // LSB first
       if (this.littleEndian) {
@@ -333,30 +394,43 @@ class WAV {
 
   // binary container outputs
 
-  // browser-specific
-  // generates blob from concatenated typed arrays
+  /**
+   * browser-specific
+   *
+   * generates blob from concatenated typed arrays
+   */
   toBlob() {
     return new Blob([this.header, this.typedData], {type: 'audio/wav'});
   }
 
-  // Node.js-specific
-  // generates buffer from concatenated typed arrays
+  /**
+   * Node.js-specific
+   *
+   * generates buffer from concatenated typed arrays
+   */
   toBuffer() {
     return Buffer.concat([Buffer.from(this.header), Buffer.from(this.typedData)]);
   }
 
   // pointer mutators
 
-  // gets time (in seconds) of pointer
+  /**
+   * gets time (in seconds) of pointer
+   */
   tell() {
     return this.pointer / this.NumChannels / this.SampleRate;
   }
 
-  // sets time (in seconds) of pointer
-  // zero-fills by default
+  /**
+   * sets time (in seconds) of pointer
+   *
+   * zero-fills by default
+   * @param {number} time
+   * @param {boolean} fill
+   */
   seek(time, fill = true) {
-    var data   = this.data;
-    var sample = Math.round(this.SampleRate * time);
+    const data   = this.data;
+    const sample = Math.round(this.SampleRate * time);
 
     this.pointer = this.NumChannels * sample;
 
@@ -372,45 +446,50 @@ class WAV {
 
   // sound data mutators
 
-  // writes the specified note to the sound data
-  // for amount of time in seconds
-  // at given normalized amplitude
-  // to channels listed (or all by default)
-  // adds to existing data by default
-  // and does not reset write index after operation by default
+  /**
+   * writes the specified note to the sound data
+   * for amount of time in seconds
+   * at given normalized amplitude
+   * to channels listed (or all by default)
+   * adds to existing data by default
+   * and does not reset write index after operation by default
+   * @param {{ note: string; time: number; amplitude?: number; }} param0
+   * @param {Array<number>} channels
+   * @param {boolean} blend
+   * @param {boolean} reset
+   */
   writeNote({note, time, amplitude = 1}, channels = [], blend = true, reset = false) {
     // creating local references to properties
-    var data = this.data;
-    var numChannels = this.NumChannels;
-    var sampleRate = this.SampleRate;
+    const data = this.data;
+    const numChannels = this.NumChannels;
+    const sampleRate = this.SampleRate;
 
     // to prevent sound artifacts
     const fadeSeconds = 0.001;
 
     // calculating properties of given note
-    var semitone = WAV.semitone(note);
-    var frequency = WAV.frequency(semitone) * Math.PI * 2 / sampleRate;
-    var period = Math.PI * 2 / frequency;
+    const semitone = WAV.semitone(note);
+    const frequency = WAV.frequency(semitone) * Math.PI * 2 / sampleRate;
 
     // amount of blocks to be written
-    var blocksOut = Math.round(sampleRate * time);
+    const blocksOut = Math.round(sampleRate * time);
     // reduces sound artifacts by fading at last fadeSeconds
-    var nonZero = blocksOut - sampleRate * fadeSeconds;
+    const nonZero = blocksOut - sampleRate * fadeSeconds;
     // fade interval in samples
-    var fade = blocksOut - nonZero + 1;
+    const fade = blocksOut - nonZero + 1;
 
     // index of start and stop samples
-    var start = this.pointer;
-    var stop = data.length;
+    const start = this.pointer;
+    const stop = data.length;
 
     // determines amount of blocks to be updated
-    var blocksIn = Math.min(Math.floor((stop - start) / numChannels), blocksOut);
+    const blocksIn = Math.min(Math.floor((stop - start) / numChannels), blocksOut);
 
     // i = index of each sample block
     // j = index of each channel in a block
     // k = cached index of data
     // d = sample data value
-    var i, j, k, d;
+    let i, j, k, d;
 
     // by default write to all channels
     if (channels.length === 0) {
@@ -423,7 +502,8 @@ class WAV {
     }
 
     // inline .indexOf() function calls into array references
-    var skipChannel = [];
+    /** @type {Array<boolean>} */
+    const skipChannel = [];
 
     for (i = 0; i < numChannels; i++) {
       skipChannel[i] = (channels.indexOf(i) === -1);
@@ -462,7 +542,7 @@ class WAV {
     }
 
     // update header properties
-    var end = Math.max(start + blocksOut * numChannels, stop) * this.BitsPerSample >>> 3;
+    const end = Math.max(start + blocksOut * numChannels, stop) * this.BitsPerSample >>> 3;
 
     this.ChunkSize = end + this.header.byteLength - 8;
     this.SubChunk2Size = end;
@@ -473,14 +553,22 @@ class WAV {
     }
   }
 
-  // adds specified notes in series
-  // (or asynchronously if offset property is specified in a note)
-  // each playing for time * relativeDuration seconds
-  // followed by a time * (1 - relativeDuration) second rest
+  /**
+   * adds specified notes in series
+   * (or asynchronously if offset property is specified in a note)
+   * each playing for time * relativeDuration seconds
+   * followed by a time * (1 - relativeDuration) second rest
+   * @param {Array<{ note: string; time: number; amplitude?: number; offset?: number; }>} notes
+   * @param {number} amplitude
+   * @param {Array<number>} channels
+   * @param {boolean} blend
+   * @param {boolean} reset
+   * @param {number} relativeDuration
+   */
   writeProgression(notes, amplitude = 1, channels = [], blend = true, reset = false, relativeDuration = 1) {
-    var start = this.pointer;
+    const start = this.pointer;
 
-    for (var i = 0, note, time, amp, off, secs, rest; i < notes.length; i++) {
+    for (let i = 0, note, time, amp, off, secs, rest; i < notes.length; i++) {
       ({note, time, amplitude: amp, offset: off} = notes[i]);
 
       // for asynchronous progression

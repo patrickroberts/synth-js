@@ -9,7 +9,8 @@ try {
   const args = getArgs(process.argv);
 
   if (args.help || args.input === undefined) {
-    return console.log(fs.readFileSync(`${__dirname}/../man/help.txt`, {encoding: 'utf8'}));
+    console.log(fs.readFileSync(`${__dirname}/../man/help.txt`, {encoding: 'utf8'}));
+    process.exit();
   }
 
   if (args.verbose) {
@@ -31,6 +32,8 @@ try {
       if (args.DryRun) {
         return console.log('dry run complete');
       }
+
+      if (!wav) process.exit();
 
       if (args.verbose) {
         console.log('writing buffer...');

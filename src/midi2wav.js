@@ -4,6 +4,15 @@ const WAV = require('./wav');
 const MIDIStream = require('./midi');
 const Timer = require('./utils/timer');
 
+/**
+ * @template {keyof MIDIStream.EventMap} T
+ * @template {MIDIStream.EventMap[T] extends undefined ? never : Exclude<keyof MIDIStream.EventMap[T], number | symbol>} S
+ * @template {S extends keyof MIDIStream.EventMap[T] ? ("value" extends keyof MIDIStream.EventMap[T][S] ? MIDIStream.EventMap[T][S]["value"] : never) : never} [V=S extends keyof MIDIStream.EventMap[T] ? ("value" extends keyof MIDIStream.EventMap[T][S] ? MIDIStream.EventMap[T][S]["value"] : never) : never]
+ * @template {S extends keyof MIDIStream.EventMap[T] ? Omit<MIDIStream.EventMap[T][S], "value"> : {}} [E = S extends keyof MIDIStream.EventMap[T] ? Omit<MIDIStream.EventMap[T][S], "value"> : {}]
+ * @param {ArrayBufferLike} buffer
+ * @param {{ verbose?: boolean; Skip?: Array<{ [subType: string]: string }> | ((track: Array<MIDIStream.Event<T, S, V, E>>) => boolean); channels?: number; sampleRate?: number; bitsPerSample?: number; duration?: number; }} args
+ * @returns {WAV | null}
+ */
 module.exports = function midiToWav(buffer, args = {}) {
   if (args.verbose) {
     console.log('parsing MIDI header...');
@@ -17,7 +26,6 @@ module.exports = function midiToWav(buffer, args = {}) {
   }
 
   const headerStream = new MIDIStream(header.data);
-  const formatType = headerStream.readUint16();
   const trackCount = headerStream.readUint16();
   const timeDivision = headerStream.readUint16();
   const tracks = [];
@@ -37,11 +45,13 @@ module.exports = function midiToWav(buffer, args = {}) {
     }
 
     const trackStream = new MIDIStream(trackChunk.data);
+    /** @type {Array<MIDIStream.Event<T, S, V, E>>} */
     const track = [];
     let keep = true;
 
     // determine whether applied filter will remove the current track while populating it
     while (keep && trackStream.byteOffset < trackChunk.length) {
+      /** @type {MIDIStream.Event<T, S, V, E>} */
       let event = trackStream.readEvent();
       track.push(event);
 
@@ -51,8 +61,8 @@ module.exports = function midiToWav(buffer, args = {}) {
         }
 
         if (Array.isArray(args.Skip)) {
-          for (let t = 0; t < args.Skip.length; t++) {
-            if (args.Skip[t][event.subType] === event.value) {
+          for (const element of args.Skip) {
+            if (element[event.subType] === event.value) {
               if (args.verbose) {
                 console.log(`skip match found: {"${event.subType}":"${event.value}"}`);
               }
@@ -106,8 +116,8 @@ module.exports = function midiToWav(buffer, args = {}) {
       let delta = 0;
       let map = new Map();
 
-      for (let j = 0; j < track.length; j++) {
-        let event = track[j];
+      for (const element of track) {
+        let event = element;
         delta += event.delta;
 
         if (event.type === 'channel') {
@@ -153,7 +163,7 @@ module.exports = function midiToWav(buffer, args = {}) {
     }
 
     events.sort(function (a, b) {
-      return a.delta - b.delta || a.note - b.note;
+      return a.delta - b.delta || Number(a.note) - Number(b.note);
     });
 
     if (args.verbose) {
