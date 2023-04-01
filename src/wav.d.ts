@@ -1,0 +1,56 @@
+export = WAV;
+declare class WAV {
+    static semitone(note?: string): number;
+    static note(semitone?: number): string;
+    static frequency(semitone?: number): number;
+    constructor(numChannels?: number, sampleRate?: number, bitsPerSample?: number, littleEndian?: boolean, data?: Array<number>);
+    header: ArrayBuffer;
+    view: DataView;
+    data: Array<number>;
+    pointer: number;
+    set ChunkID(arg: string);
+    get ChunkID(): string;
+    set ChunkSize(arg: number);
+    get ChunkSize(): number;
+    set Format(arg: string);
+    get Format(): string;
+    set SubChunk1ID(arg: string);
+    get SubChunk1ID(): string;
+    set SubChunk1Size(arg: number);
+    get SubChunk1Size(): number;
+    set AudioFormat(arg: number);
+    get AudioFormat(): number;
+    set NumChannels(arg: number);
+    get NumChannels(): number;
+    set SampleRate(arg: number);
+    get SampleRate(): number;
+    set ByteRate(arg: number);
+    get ByteRate(): number;
+    set BlockAlign(arg: number);
+    get BlockAlign(): number;
+    set BitsPerSample(arg: number);
+    get BitsPerSample(): number;
+    set SubChunk2ID(arg: string);
+    get SubChunk2ID(): string;
+    set SubChunk2Size(arg: number);
+    get SubChunk2Size(): number;
+    littleEndian: boolean;
+    setString(str: string, byteLength?: number, byteOffset?: number): void;
+    getString(byteLength: number, byteOffset?: number): string;
+    get typedData(): ArrayBuffer;
+    toBlob(): Blob;
+    toBuffer(): Buffer;
+    tell(): number;
+    seek(time: number, fill?: boolean): void;
+    writeNote({ note, time, amplitude }: {
+        note: string;
+        time: number;
+        amplitude?: number;
+    }, channels?: Array<number>, blend?: boolean, reset?: boolean): void;
+    writeProgression(notes: Array<{
+        note: string;
+        time: number;
+        amplitude?: number;
+        offset?: number;
+    }>, amplitude?: number, channels?: Array<number>, blend?: boolean, reset?: boolean, relativeDuration?: number): void;
+}

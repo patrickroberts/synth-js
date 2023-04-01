@@ -1,0 +1,30 @@
+{
+	"compilerOptions": {
+		"allowSyntheticDefaultImports": true,
+		"allowJs": true,
+		"checkJs": true,
+		"esModuleInterop": true,
+		"declaration": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"incremental": false,
+		"lib": ["es2015", "dom"],
+		"module": "CommonJS",
+		"moduleResolution": "node",
+		"noUnusedLocals": false,
+		"pretty": true,
+		"removeComments": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"sourceMap": false,
+		"strictFunctionTypes": true,
+		"strictBindCallApply": true,
+		"strictNullChecks": true,
+		"target": "ES2015",
+		"outDir": "./",
+		"emitDeclarationOnly": true,
+		"types": ["node"]
+	},
+	"include": ["./index.js"],
+	"exclude": []
+}

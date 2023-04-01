@@ -1,19 +1,28 @@
 'use strict';
 
-function argumentToVerboseFlag(argument) {
-  const camelCase = /^[\w]|\B[A-Z]/g;
+const camelCase = /^[\w]|\B[A-Z]/g;
+const beginning = /^(.).*$/;
 
+/**
+ * @param {string} argument
+ */
+function argumentToVerboseFlag(argument) {
   return argument.replace(camelCase, (character, index) => `-${'-'.charAt(index)}${character.toLowerCase()}`);
 }
 
+/**
+ * @param {string} argument
+ */
 function argumentToConciseFlag(argument) {
-  const beginning = /^(.).*$/;
-
-  return argument.replace(beginning, (match, character) => `-${character}`);
+  return argument.replace(beginning, (_, character) => `-${character}`);
 }
 
-// utility function to convert
-// command-line arguments to object
+/**
+ * utility function to convert
+ * command-line arguments to object
+ * @param {Array<string>} argv
+ * @returns {{ help?: boolean; input?: string; verbose?: boolean; DryRun?: boolean; output?: string; }}
+ */
 module.exports = function getArguments(argv) {
   const argumentNames = [
     'input',

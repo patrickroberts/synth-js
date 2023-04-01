@@ -1,16 +1,24 @@
 'use strict';
 
 class MIDIStream {
+  /**
+   * @param {ArrayBufferLike} buffer
+   */
   constructor(buffer) {
     this.data = new Uint8Array(buffer);
     this.byteOffset = 0;
     this.lastEventTypeByte = 0x00;
   }
 
+  /**
+   * @param {number} byteLength
+   * @returns {string}
+   */
   readString(byteLength) {
-    var byteOffset = this.byteOffset;
+    const byteOffset = this.byteOffset;
+    let str = '';
 
-    for (var i = 0, str = ''; i < byteLength; i++) {
+    for (let i = 0; i < byteLength; i++) {
       str += String.fromCharCode(this.data[byteOffset + i]);
     }
 
@@ -20,8 +28,8 @@ class MIDIStream {
   }
 
   readUint32() {
-    var byteOffset = this.byteOffset;
-    var value = (
+    const byteOffset = this.byteOffset;
+    const value = (
       (this.data[byteOffset    ] << 24) |
       (this.data[byteOffset + 1] << 16) |
       (this.data[byteOffset + 2] <<  8) |
@@ -34,8 +42,8 @@ class MIDIStream {
   }
 
   readUint24() {
-    var byteOffset = this.byteOffset;
-    var value = (
+    const byteOffset = this.byteOffset;
+    const value = (
       (this.data[byteOffset    ] << 16) |
       (this.data[byteOffset + 1] <<  8) |
       (this.data[byteOffset + 2]      )
@@ -47,8 +55,8 @@ class MIDIStream {
   }
 
   readUint16() {
-    var byteOffset = this.byteOffset;
-    var value = (
+    const byteOffset = this.byteOffset;
+    const value = (
       (this.data[byteOffset    ] << 8) |
       (this.data[byteOffset + 1]     )
     );
@@ -59,8 +67,8 @@ class MIDIStream {
   }
 
   readUint8() {
-    var byteOffset = this.byteOffset;
-    var value = this.data[byteOffset];
+    const byteOffset = this.byteOffset;
+    const value = this.data[byteOffset];
 
     this.byteOffset += 1;
 
@@ -68,10 +76,10 @@ class MIDIStream {
   }
 
   readInt8() {
-    var byteOffset = this.byteOffset;
-    var value = this.data[byteOffset];
+    const byteOffset = this.byteOffset;
+    let value = this.data[byteOffset];
 
-    if (value & 0x80 === 0x80) {
+    if ((value & 0x80) === 0x80) {
       value ^= 0xFFFFFF00;
     }
 
@@ -81,8 +89,8 @@ class MIDIStream {
   }
 
   readVarUint() {
-    var value = 0;
-    var uint8;
+    let value = 0;
+    let uint8;
 
     do {
       uint8 = this.readUint8();
@@ -92,18 +100,21 @@ class MIDIStream {
     return value;
   }
 
+  /**
+   * @param {number} byteLength
+   */
   skip(byteLength) {
     this.byteOffset += byteLength;
   }
 
   readChunk() {
-    var id = this.readString(4);
-    var length = this.readUint32();
-    var byteOffset = this.byteOffset;
+    const id = this.readString(4);
+    const length = this.readUint32();
+    const byteOffset = this.byteOffset;
 
     this.byteOffset += length;
 
-    var data = this.data.slice(byteOffset, this.byteOffset);
+    const data = this.data.slice(byteOffset, this.byteOffset);
 
     return {
       id: id,
@@ -112,82 +123,93 @@ class MIDIStream {
     };
   }
 
+  /**
+   * @template {keyof EventMap} T
+   * @template {EventMap[T] extends undefined ? never : Exclude<keyof EventMap[T], number | symbol>} S
+   * @template {S extends keyof EventMap[T] ? ("value" extends keyof EventMap[T][S] ? EventMap[T][S]["value"] : never) : never} [V=S extends keyof EventMap[T] ? ("value" extends keyof EventMap[T][S] ? EventMap[T][S]["value"] : never) : never]
+   * @template {S extends keyof EventMap[T] ? Omit<EventMap[T][S], "value"> : {}} [E = S extends keyof EventMap[T] ? Omit<EventMap[T][S], "value"> : {}]
+   * @returns {Event<T, S, V, E>}
+   */
   readEvent() {
-    var event = {};
+    /** @type {Event<T, S, V, E>} */
+    const event = {};
 
     event.delta = this.readVarUint();
 
-    var eventTypeByte = this.readUint8();
+    let eventTypeByte = this.readUint8();
 
     // system event
     if ((eventTypeByte & 0xF0) === 0xF0) {
       switch (eventTypeByte) {
       // meta event
       case 0xFF:
-        event.type = 'meta';
+        /** @type {Event<"meta", keyof MetaEvent, any, {}>} */
+        // @ts-expect-error
+        const meta = event
+        meta.type = "meta";
 
-        var subTypeByte = this.readUint8();
-        var length = this.readVarUint();
+        const subTypeByte = this.readUint8();
+        let length = this.readVarUint();
 
         switch (subTypeByte) {
         case 0x00:
-          event.subType = 'sequenceNumber';
+          meta.subType = 'sequenceNumber';
           if (length === 2)
             event.value = this.readUint16();
           else
             this.skip(length);
           break;
         case 0x01:
-          event.subType = 'text';
+          meta.subType = 'text';
           event.value = this.readString(length);
           break;
         case 0x02:
-          event.subType = 'copyrightNotice';
+          meta.subType = 'copyrightNotice';
           event.value = this.readString(length);
           break;
         case 0x03:
-          event.subType = 'trackName';
+          meta.subType = 'trackName';
           event.value = this.readString(length);
           break;
         case 0x04:
-          event.subType = 'instrumentName';
+          meta.subType = 'instrumentName';
           event.value = this.readString(length);
           break;
         case 0x05:
-          event.subType = 'lyrics';
+          meta.subType = 'lyrics';
           event.value = this.readString(length);
           break;
         case 0x06:
-          event.subType = 'marker';
+          meta.subType = 'marker';
           event.value = this.readString(length);
           break;
         case 0x07:
-          event.subType = 'cuePoint';
+          meta.subType = 'cuePoint';
           event.value = this.readString(length);
           break;
         case 0x20:
-          event.subType = 'midiChannelPrefix';
+          meta.subType = 'midiChannelPrefix';
           if (length === 1)
             event.value = this.readUint8();
           else
             this.skip(length);
           break;
         case 0x2F:
-          event.subType = 'endOfTrack';
+          meta.subType = 'endOfTrack';
           if (length > 0)
             this.skip(length);
           break;
         case 0x51:
-          event.subType = 'setTempo';
+          meta.subType = 'setTempo';
           if (length === 3)
             event.value = this.readUint24();
           else
             this.skip(length)
           break;
         case 0x54:
-          event.subType = 'smpteOffset';
+          meta.subType = 'smpteOffset';
           if (length === 5) {
-            var hourByte = this.readUint8();
+            const hourByte = this.readUint8();
             event.value = {
               frameRate: ({
                 0x00: 24,
@@ -206,7 +228,7 @@ class MIDIStream {
           }
           break;
         case 0x58:
-          event.subType = 'timeSignature';
+          meta.subType = 'timeSignature';
           if (length === 4) {
             event.value = {
               numerator: this.readUint8(),
@@ -219,7 +241,7 @@ class MIDIStream {
           }
           break;
         case 0x59:
-          event.subType = 'keySignature';
+          meta.subType = 'keySignature';
           if (length === 2) {
             event.value = {
               key: this.readInt8(),
@@ -230,41 +252,51 @@ class MIDIStream {
           }
           break;
         case 0x7F:
-          event.subType = 'sequencerSpecific';
+          meta.subType = 'sequencerSpecific';
           event.value = this.readString(length);
           break;
         default:
-          event.subType = 'unknown';
+          meta.subType = 'unknown';
           event.value = this.readString(length);
         }
         break;
       // sysex event
       case 0xF0:
-        event.type = 'sysEx';
+        /** @type {Event<"sysEx", Exclude<keyof SysExEvent, number | symbol>, any, {}>} */
+        // @ts-expect-error
+        const sysex = event;
+        sysex.type = 'sysEx';
 
-        var length = this.readVarUint();
+        length = this.readVarUint();
 
         event.value = this.readString(length);
 
         break;
       case 0xF7:
-        event.type = 'dividedSysEx';
+        /** @type {Event<"dividedSysEx", Exclude<keyof DividedSysExEvent, number | symbol>, any, {}>} */
+        // @ts-expect-error
+        const divsysex = event;
+        divsysex.type = 'dividedSysEx';
 
-        var length = this.readVarUint();
+        length = this.readVarUint();
 
         event.value = this.readString(length);
 
         break;
       default:
-        event.type = 'unknown';
+        /** @type {Event<"unknown", Exclude<keyof UnknownEvent, number | symbol>, any, {}>} */
+        // @ts-expect-error
+        const unk = event;
+        unk.type = 'unknown';
+        unk.subType = "unknown";
 
-        var length = this.readVarUint();
+        length = this.readVarUint();
 
         event.value = this.readString(length);
       }
     // channel event
     } else {
-      var param;
+      let param;
 
       // if the high bit is low
       // use running event type mode
@@ -276,14 +308,17 @@ class MIDIStream {
         this.lastEventTypeByte = eventTypeByte;
       }
 
-      var eventType = eventTypeByte >> 4;
+      const eventType = eventTypeByte >> 4;
 
-      event.channel = eventTypeByte & 0x0F;
-      event.type = 'channel';
+      /** @type {Event<"channel", keyof ChannelEvent, any, { channel: number; }>} */
+      // @ts-expect-error
+      const chan = event;
+      chan.channel = eventTypeByte & 0x0F;
+      chan.type = 'channel';
 
       switch (eventType) {
       case 0x08:
-        event.subType = 'noteOff';
+        chan.subType = 'noteOff';
 
         event.value = {
           noteNumber: param,
@@ -299,13 +334,13 @@ class MIDIStream {
         // some midi implementations use a noteOn
         // event with 0 velocity to denote noteOff
         if (event.value.velocity === 0) {
-          event.subType = 'noteOff';
+          chan.subType = 'noteOff';
         } else {
-          event.subType = 'noteOn';
+          chan.subType = 'noteOn';
         }
         break;
       case 0x0A:
-        event.subType = 'noteAftertouch';
+        chan.subType = 'noteAftertouch';
 
         event.value = {
           noteNumber: param,
@@ -313,7 +348,7 @@ class MIDIStream {
         };
         break;
       case 0x0B:
-        event.subType = 'controller';
+        chan.subType = 'controller';
 
         event.value = {
           controllerNumber: param,
@@ -321,19 +356,19 @@ class MIDIStream {
         };
         break;
       case 0x0C:
-        event.subType = 'programChange';
+        chan.subType = 'programChange';
         event.value = param;
         break;
       case 0x0D:
-        event.subType = 'channelAftertouch';
+        chan.subType = 'channelAftertouch';
         event.value = param;
         break;
       case 0x0E:
-        event.subType = 'pitchBend';
+        chan.subType = 'pitchBend';
         event.value = param + (this.readUint8() << 7);
         break;
       default:
-        event.subType = 'unknown';
+        chan.subType = 'unknown';
         event.value = (param << 8) + this.readUint8();
       }
     }
@@ -341,5 +376,66 @@ class MIDIStream {
     return event;
   }
 };
+
+/**
+ * @typedef {Object} EventMap
+ * @property {MetaEvent} meta
+ * @property {SysExEvent} sysEx
+ * @property {DividedSysExEvent} dividedSysEx
+ * @property {UnknownEvent} unknown
+ * @property {ChannelEvent} channel
+ */
+
+/**
+ * @typedef {Object} MetaEvent
+ * @property {{ value: number; }} sequenceNumber
+ * @property {{ value: string; }} text
+ * @property {{ value: string; }} copyrightNotice
+ * @property {{ value: string; }} trackName
+ * @property {{ value: string; }} instrumentName
+ * @property {{ value: string; }} lyrics
+ * @property {{ value: string; }} marker
+ * @property {{ value: string; }} cuePoint
+ * @property {{ value: number | undefined; }} midiChannelPrefix
+ * @property {{ value: undefined; }} endOfTrack
+ * @property {{ value: number | undefined; }} setTempo
+ * @property {{ value: { frameRate: number; hour: number; minute: number; second: number; frame: number; subFrame: number; } | undefined; }} smpteOffset
+ * @property {{ value: { numerator: number; denominator: number; metronome: number; thirtyseconds: number; } | undefined; }} timeSignature
+ * @property {{ value: { key: number; scale: number; } | undefined; }} keySignature
+ * @property {{ value: number; }} sequencerSpecific
+ * @property {{ value: number; }} unknown
+ */
+
+/**
+ * @typedef {{ [K in any]: { value: string; }; }} SysExEvent
+ */
+
+/**
+ * @typedef {{ [K in any]: { value: string; }; }} DividedSysExEvent
+ */
+
+/**
+ * @typedef {{ unknown: { value: string; }; }} UnknownEvent
+ */
+
+/**
+ * @typedef {Object} ChannelEvent
+ * @property {{ channel: number; value: { noteNumber: number; } }} noteOff
+ * @property {{ channel: number; value: { noteNumber: number; } }} noteOn
+ * @property {{ channel: number; value: { noteNumber: number; amount: number; } }} noteAftertouch
+ * @property {{ channel: number; value: { controllerNumber: number; controllerValue: number; } }} controller
+ * @property {{ channel: number; value: number; }} programChange
+ * @property {{ channel: number; value: number; }} channelAftertouch
+ * @property {{ channel: number; value: number; }} pitchBend
+ * @property {{ channel: number; value: number; }} unknown
+ */
+
+/**
+ * @template {keyof EventMap} [T=keyof EventMap]
+ * @template {Exclude<keyof EventMap[T], number | symbol> | undefined} [S=undefined]
+ * @template {S extends keyof EventMap[T] ? ("value" extends keyof EventMap[T][S] ? EventMap[T][S]["value"] : never) : never} [V=S extends keyof EventMap[T] ? ("value" extends keyof EventMap[T][S] ? EventMap[T][S]["value"] : never) : never]
+ * @template {S extends keyof EventMap[T] ? Omit<EventMap[T][S], "value"> : {}} [E = S extends keyof EventMap[T] ? Omit<EventMap[T][S], "value"> : {}]
+ * @typedef {{ delta: number; subType: S; type: T; value: any } & E} Event
+ */
 
 module.exports = MIDIStream;
