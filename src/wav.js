@@ -111,7 +111,7 @@ class WAV {
     this.SubChunk2Size = data.length * bytesPerSample;
     /** @type {boolean} */
     // @ts-expect-error
-    this.littleEndian
+    this.littleEndian;
   }
 
   /**

@@ -57,7 +57,7 @@ module.exports = function midiToWav(buffer, args = {}) {
 
       if (typeof event.value === 'string') {
         if (args.verbose) {
-          console.log(`{"${String(event.subType)}":"${event.value}"}`);
+          console.log(`{"${event.subType}":"${event.value}"}`);
         }
 
         if (Array.isArray(args.Skip)) {

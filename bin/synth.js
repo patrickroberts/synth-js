@@ -33,7 +33,7 @@ try {
         return console.log('dry run complete');
       }
 
-      if (!wav) process.exit()
+      if (!wav) process.exit();
 
       if (args.verbose) {
         console.log('writing buffer...');

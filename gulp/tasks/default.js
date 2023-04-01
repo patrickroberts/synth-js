@@ -33,5 +33,5 @@ gulp.task('default', cb => {
 			.on('error', gutil.log),
 		sourcemaps.write('./'),
 		gulp.dest(config.paths.dest)
-	], cb)
+	], cb);
 });

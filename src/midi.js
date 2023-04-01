@@ -145,7 +145,7 @@ class MIDIStream {
       case 0xFF:
         /** @type {Event<"meta", keyof MetaEvent, any, {}>} */
         // @ts-expect-error
-        const meta = event
+        const meta = event;
         meta.type = "meta";
 
         const subTypeByte = this.readUint8();
